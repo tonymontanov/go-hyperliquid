@@ -1,0 +1,36 @@
+# golangci-lint configuration of go-hyperliquid.
+# The house style (explicit `var x T = ...`, kebab-case file names, FILE headers)
+# is documented in handoff.md; linters below catch correctness problems.
+version: "2"
+run:
+  timeout: 5m
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose
+    - misspell
+    - unconvert
+    - gocritic
+  settings:
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+    staticcheck:
+      checks:
+        - all
+        - -ST1000 # package comments live in doc.go / FILE headers
+        - -QF1011 # explicit types in `var x T = ...` are the house style
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gocritic
+formatters:
+  enable:
+    - gofmt
