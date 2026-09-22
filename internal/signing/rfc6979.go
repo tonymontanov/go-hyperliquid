@@ -17,11 +17,13 @@ stack (Apple M4 Pro, median of 3 runs):
 	ecdsa.SignCompact : 20.7 µs, 1592 B/op, 29 allocs/op
 	signDigest        : 20.8 µs,  568 B/op, 12 allocs/op
 
-The remaining 12 allocations all come from ModNScalar.InverseValNonConst — the
-only modular inverse decred exports, implemented with math/big. Removing them
-needs an own fixed-width inverse (safegcd / binary extended Euclid); the time
-is dominated by the base-point multiplication either way. Tracked in
-handoff.md; the budget is pinned by TestSignDigestAllocationBudget.
+The remaining allocations all come from ModNScalar.InverseValNonConst — the
+only modular inverse decred exports, implemented with math/big — and their
+count depends on the platform and Go version (12 on darwin/arm64 + Go 1.25,
+16 on linux/amd64 + Go 1.24). Removing them needs an own fixed-width inverse
+(safegcd / binary extended Euclid); the time is dominated by the base-point
+multiplication either way. Tracked in handoff.md; the advantage over the
+reference path is pinned by TestSignDigestAllocationBudget.
 
 EQUIVALENCE:
 The algorithm mirrors decred's signRFC6979 / sign / NonceRFC6979 step by step

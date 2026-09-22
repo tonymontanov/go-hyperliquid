@@ -20,8 +20,8 @@ forces a newer Go toolchain). decred's implementation is pure Go, constant
 time, uses RFC 6979 deterministic nonces — which makes signatures
 byte-identical to eth_account, the library behind the official Python SDK.
 The SDK drives decred's exported primitives through its own allocation-free
-signing routine (rfc6979.go) instead of ecdsa.SignCompact: same bytes, 12
-allocations instead of 29 (the rest are inside decred's math/big inverse).
+signing routine (rfc6979.go) instead of ecdsa.SignCompact: same bytes, less
+than half the allocations (the rest are inside decred's math/big inverse).
 See BenchmarkSignDigest / BenchmarkSignCompactDecred.
 
 MAIN FUNCTIONS:

@@ -32,6 +32,16 @@ import (
 )
 
 func main() {
+	var err error = run()
+	if err != nil {
+		fmt.Println("FAILED:", err)
+		os.Exit(1)
+	}
+}
+
+// run holds the whole example so that deferred cleanups run before the
+// process exits with a status code.
+func run() error {
 	var coin string = os.Getenv("HYPERLIQUID_COIN")
 	if coin == "" {
 		coin = "BTC"
@@ -50,8 +60,7 @@ func main() {
 	var err error
 	client, err = hyperliquid.NewClient(cfg)
 	if err != nil {
-		fmt.Println("client:", err)
-		os.Exit(1)
+		return fmt.Errorf("client: %w", err)
 	}
 	defer func() { _ = client.Close() }()
 	var perps *perpetuals.Client = perpetuals.NewClient(client)
@@ -64,14 +73,12 @@ func main() {
 	var assets []types.AssetInfo
 	assets, err = perps.MarketData().GetAssets(ctx)
 	if err != nil {
-		fmt.Println("assets:", err)
-		os.Exit(1)
+		return fmt.Errorf("assets: %w", err)
 	}
 	var info types.AssetInfo
 	info, err = perps.MarketData().GetAssetInfo(ctx, coin)
 	if err != nil {
-		fmt.Println("asset:", err)
-		os.Exit(1)
+		return fmt.Errorf("asset: %w", err)
 	}
 	fmt.Printf("testnet=%v assets=%d %s: assetID=%d szDecimals=%d maxLeverage=%d\n",
 		cfg.Testnet, len(assets), coin, info.AssetID, info.SzDecimals, info.MaxLeverage)
@@ -79,8 +86,7 @@ func main() {
 	var book types.OrderBookSnapshot
 	book, err = perps.MarketData().GetOrderBook(ctx, coin, perpetuals.OrderBookOptions{})
 	if err != nil {
-		fmt.Println("book:", err)
-		os.Exit(1)
+		return fmt.Errorf("book: %w", err)
 	}
 	fmt.Printf("book: time=%d bids=%d asks=%d", book.TimeMs, len(book.Bids()), len(book.Asks()))
 	if len(book.Bids()) > 0 && len(book.Asks()) > 0 {
@@ -134,4 +140,5 @@ func main() {
 	fmt.Printf("streams in %ds: bbo=%d fastBook=%d (levels/side=%d) trades=%d assetCtx=%d\n",
 		seconds, bboCount.Load(), bookCount.Load(), firstBook.Load(), tradeCount.Load(), ctxCount.Load())
 	fmt.Printf("SDK-side IP weight used: %d / %d\n", client.IPWeightUsed(), hyperliquid.IPWeightLimitPerMinute)
+	return nil
 }

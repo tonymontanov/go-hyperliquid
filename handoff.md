@@ -151,8 +151,9 @@ deviation from the sibling SDKs' `client.Swap().(*swap.Client)`).
   write fan-out, `ErrSubscriptionConflict` for a different payload on the same
   key); `clearinghouseState` stream (`Stream().WatchAccountState`, absolute
   account snapshots) + `StreamClient.IsConnected()`; own RFC 6979 signing on
-  decred primitives (`internal/signing/rfc6979.go`, byte-identical, 12 allocs
-  instead of 29 — the rest are inside decred's math/big inverse; pinned by
+  decred primitives (`internal/signing/rfc6979.go`, byte-identical; 12 allocs
+  on arm64/Go 1.25, 16 on amd64/Go 1.24 instead of 29 — the rest are inside
+  decred's math/big inverse; the relative advantage is pinned by
   `TestSignDigestAllocationBudget`, differential test vs `ecdsa.SignCompact`).
 - M6 desk connector — see the core's `handoff.md` («🔧 В работе (22.09.2026)»).
 

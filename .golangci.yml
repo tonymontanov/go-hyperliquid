@@ -24,7 +24,8 @@ linters:
       checks:
         - all
         - -ST1000 # package comments live in doc.go / FILE headers
-        - -QF1011 # explicit types in `var x T = ...` are the house style
+        - -ST1023 # explicit types in `var x T = ...` are the house style
+        - -QF1011 # same rule, quickfix flavour
   exclusions:
     rules:
       - path: _test\.go

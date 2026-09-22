@@ -36,6 +36,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -46,15 +47,30 @@ import (
 	"github.com/tonymontanov/go-hyperliquid/types"
 )
 
-func fail(step string, err error) {
-	fmt.Printf("FAILED at %s: %v\n", step, err)
-	os.Exit(1)
-}
+// errNotAllowed — the safety gate is closed.
+var errNotAllowed = errors.New("refusing to send orders: set HYPERLIQUID_ALLOW_LIVE=1 (testnet only)")
 
 func main() {
+	var err error = run()
+	if err != nil {
+		fmt.Println("FAILED:", err)
+		if errors.Is(err, errNotAllowed) {
+			os.Exit(2)
+		}
+		os.Exit(1)
+	}
+}
+
+// step wraps an error with the name of the failed step.
+func step(name string, err error) error {
+	return fmt.Errorf("at %s: %w", name, err)
+}
+
+// run holds the whole example so that deferred cleanups (client.Close, ctx
+// cancel) run before the process exits with a status code.
+func run() error {
 	if os.Getenv("HYPERLIQUID_ALLOW_LIVE") != "1" {
-		fmt.Println("refusing to send orders: set HYPERLIQUID_ALLOW_LIVE=1 (testnet only)")
-		os.Exit(2)
+		return errNotAllowed
 	}
 	var coin string = os.Getenv("HYPERLIQUID_COIN")
 	if coin == "" {
@@ -80,11 +96,11 @@ func main() {
 	var err error
 	client, err = hyperliquid.NewClient(cfg)
 	if err != nil {
-		fail("NewClient", err)
+		return step("NewClient", err)
 	}
 	defer func() { _ = client.Close() }()
 	if !client.CanSign() {
-		fail("credentials", fmt.Errorf("HYPERLIQUID_PERPETUALS_TESTNET_SECRET_KEY is empty"))
+		return step("credentials", errors.New("HYPERLIQUID_PERPETUALS_TESTNET_SECRET_KEY is empty"))
 	}
 	fmt.Printf("signer (API wallet) = %s\naccount (info user) = %s\n", client.SignerAddress(), client.UserAddress())
 
@@ -96,7 +112,7 @@ func main() {
 	defer cancel()
 	if os.Getenv("HYPERLIQUID_USE_WS_POST") == "1" {
 		if err = client.WarmUpPost(ctx); err != nil {
-			fail("WarmUpPost", err)
+			return step("WarmUpPost", err)
 		}
 		trading = trading.WS()
 		fmt.Println("transport: WebSocket post")
@@ -105,12 +121,15 @@ func main() {
 	var info types.AssetInfo
 	info, err = perps.MarketData().GetAssetInfo(ctx, coin)
 	if err != nil {
-		fail("GetAssetInfo", err)
+		return step("GetAssetInfo", err)
 	}
 	var book types.OrderBookSnapshot
 	book, err = perps.MarketData().GetOrderBook(ctx, coin, perpetuals.OrderBookOptions{})
-	if err != nil || len(book.Bids()) == 0 {
-		fail("GetOrderBook", fmt.Errorf("empty book or error: %v", err))
+	if err != nil {
+		return step("GetOrderBook", err)
+	}
+	if len(book.Bids()) == 0 {
+		return step("GetOrderBook", errors.New("empty bid side"))
 	}
 
 	var bestBid types.Fixed = book.Bids()[0].Price
@@ -132,21 +151,24 @@ func main() {
 		Coin: coin, IsBuy: true, Price: price, Size: size, TimeInForce: types.TimeInForceAlo, Cloid: cloid,
 	}, types.OrderOptions{ExpiresAfterMs: uint64(time.Now().Add(15 * time.Second).UnixMilli())})
 	if err != nil {
-		fail("CreateOrder", err)
+		return step("CreateOrder", err)
 	}
 	fmt.Printf("1. placed: %s oid=%d in %s\n", status.Kind, status.Oid, time.Since(started).Round(time.Millisecond))
 
 	var state types.OrderState
 	state, err = trading.GetOrderStatus(ctx, 0, cloid)
-	if err != nil || !state.Found {
-		fail("GetOrderStatus", fmt.Errorf("found=%v err=%v", state.Found, err))
+	if err != nil {
+		return step("GetOrderStatus", err)
+	}
+	if !state.Found {
+		return step("GetOrderStatus", errors.New("the exchange does not know the order"))
 	}
 	fmt.Printf("2. orderStatus: %s px=%s sz=%s tif=%s\n", state.Status, state.Order.LimitPx, state.Order.Sz, state.Order.Tif)
 
 	var open []types.OpenOrder
 	open, err = trading.GetOpenOrders(ctx, coin)
 	if err != nil {
-		fail("GetOpenOrders", err)
+		return step("GetOpenOrders", err)
 	}
 	fmt.Printf("3. open orders on %s: %d\n", coin, len(open))
 
@@ -156,14 +178,14 @@ func main() {
 		Coin: coin, IsBuy: true, Price: newPrice, Size: size, TimeInForce: types.TimeInForceAlo, Cloid: cloid,
 	}}, types.ModifyOptions{})
 	if err != nil {
-		fail("ModifyOrder", err)
+		return step("ModifyOrder", err)
 	}
 	fmt.Printf("4. modified to %s: %s oid=%d in %s\n", newPrice, status.Kind, status.Oid, time.Since(started).Round(time.Millisecond))
 
 	started = time.Now()
 	err = trading.CancelOrderByCloid(ctx, types.CancelByCloidRequest{Coin: coin, Cloid: cloid}, types.CancelOptions{})
 	if err != nil {
-		fail("CancelOrderByCloid", err)
+		return step("CancelOrderByCloid", err)
 	}
 	fmt.Printf("5. cancelled in %s\n", time.Since(started).Round(time.Millisecond))
 
@@ -173,9 +195,10 @@ func main() {
 	var limit types.UserRateLimit
 	limit, err = perps.Account().GetUserRateLimit(ctx)
 	if err != nil {
-		fail("GetUserRateLimit", err)
+		return step("GetUserRateLimit", err)
 	}
 	fmt.Printf("7. address budget: used=%d cap=%d cumVlm=%s | IP weight used=%d/%d\n",
 		limit.NRequestsUsed, limit.NRequestsCap, limit.CumVlm, client.IPWeightUsed(), hyperliquid.IPWeightLimitPerMinute)
 	fmt.Println("OK")
+	return nil
 }

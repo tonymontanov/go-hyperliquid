@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-09-22
+
+### Fixed
+- CI: the signing allocation test pinned a platform-dependent absolute count
+  (12 on darwin/arm64, 16 on linux/amd64 — the difference is inside decred's
+  math/big inverse); it now asserts strictly fewer allocations than
+  `ecdsa.SignCompact`.
+- Lint: staticcheck ST1023 disabled (explicit `var x T = ...` is the house
+  style); examples restructured so deferred cleanups run before exit;
+  copy-on-write append in the WS subscription registry made explicit.
+
+No behavioural change on the wire.
+
 ## [1.0.0] — 2026-09-22 — Perpetuals
 
 First public release. The order path is verified against the official Python
@@ -40,4 +53,5 @@ the exchange's acceptance of the docs-only `f` / `a` flags is still pending.
 - Exchange statistics with more than 8 decimals failed `Fixed` decoding.
 - One out-of-range `allMids` entry (testnet junk pair) failed the whole request.
 
+[1.0.1]: https://github.com/tonymontanov/go-hyperliquid/releases/tag/v1.0.1
 [1.0.0]: https://github.com/tonymontanov/go-hyperliquid/releases/tag/v1.0.0

@@ -276,10 +276,12 @@ func (c *Conn) Subscribe(sub *Subscription) error {
 		c.mu.Unlock()
 		return ErrSubscriptionConflict
 	}
-	// Copy-on-write: dispatch iterates a slice header taken under RLock.
+	// Copy-on-write: dispatch iterates a slice header taken under RLock, so
+	// the old backing array is never mutated — a fresh one replaces it.
 	var members []*Subscription = make([]*Subscription, 0, len(group.members)+1)
 	members = append(members, group.members...)
-	group.members = append(members, sub)
+	members = append(members, sub)
+	group.members = members
 	var socket *websocket.Conn = c.socket
 	c.mu.Unlock()
 
@@ -472,7 +474,9 @@ func (c *Conn) connectAndRun(ctx context.Context) (bool, error) {
 	}
 	var socket *websocket.Conn
 	var err error
-	socket, _, err = dialer.DialContext(ctx, c.cfg.URL, nil)
+	// The *http.Response of a successful upgrade carries no body to close: the
+	// underlying connection IS the socket (gorilla/websocket contract).
+	socket, _, err = dialer.DialContext(ctx, c.cfg.URL, nil) //nolint:bodyclose // upgrade response, see above
 	if err != nil {
 		return false, fmt.Errorf("dial: %w", err)
 	}

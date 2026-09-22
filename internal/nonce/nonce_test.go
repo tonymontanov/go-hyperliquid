@@ -87,7 +87,8 @@ func TestNextUniqueUnderConcurrency(t *testing.T) {
 func TestForSignerSharesGenerator(t *testing.T) {
 	var a = [20]byte{1}
 	var b = [20]byte{2}
-	if ForSigner(a) != ForSigner(a) {
+	var first = ForSigner(a)
+	if first != ForSigner(a) {
 		t.Fatal("same signer must share one generator")
 	}
 	if ForSigner(a) == ForSigner(b) {
