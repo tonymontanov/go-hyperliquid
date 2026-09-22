@@ -1,0 +1,21 @@
+# Binaries and build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/dist/
+
+# Env / credentials — never commit secrets
+.env
+*.credentials.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
