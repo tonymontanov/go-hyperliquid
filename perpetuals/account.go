@@ -188,6 +188,17 @@ func (a *AccountClient) ownFills(all []types.Fill) []types.Fill {
 	return out
 }
 
+// GetUserRole returns what address is to the exchange (info "userRole",
+// weight 60): a master account ("user"), an API wallet ("agent", with the
+// master it signs for in Data.User), a vault, a sub-account or "missing".
+// Lets a caller detect the classic misconfiguration — the API wallet address
+// used as the account address: actions still go through (the agent signs for
+// the master), but account-scoped info requests and user subscriptions then
+// look at the agent's own, empty account.
+func (a *AccountClient) GetUserRole(ctx context.Context, address string) (types.UserRole, error) {
+	return domain.UserRole(ctx, a.c.engine(), a.c.prof(), address)
+}
+
 // GetUserRateLimit returns the address-based rate-limit state of the account
 // and syncs the client's local budget mirror (Client.AddressBudget).
 func (a *AccountClient) GetUserRateLimit(ctx context.Context) (types.UserRateLimit, error) {

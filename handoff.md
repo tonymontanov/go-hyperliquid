@@ -3,9 +3,9 @@
 Context document for continuing work across sessions. **Update after every
 significant task** (architecture change, new module, refactoring).
 
-Last update: 2026-09-22 (evening) — v1.0 SDK code complete; desk connector
-implemented on branch `hyperliquid-connector` of sleipnir-trading-core (5
-commits); both await live order-path verification on testnet.
+Last update: 2026-10-25 — v1.0.2: order path verified live on mainnet through
+the desk connector (sleipnir-trading-core, branch `hyperliquid-connector`);
+`GetUserRole` added, modify-gone text classified.
 
 ---
 
@@ -161,11 +161,20 @@ Benchmarks (Apple M4 Pro): msgpack 47 ns / JSON 43 ns / digest 0.75 µs / nonce
 31 ns / Fixed wire 13 ns — all 0 allocs; ECDSA sign 20.8 µs, 12 allocs
 (decred's `ecdsa.SignCompact`: 20.7 µs, 29 allocs).
 
+### ✅ Done (2026-10-25) — v1.0.2: live order path verified on mainnet through the desk connector
+- Signing, `order` / `batchModify` / `cancel` / `cancelByCloid` accepted; statuses
+  decode; the replacement of a modify gets a NEW oid; `clearinghouseState`
+  stream works; RTT order ≈ 0.7 s, cancel ≈ 1 s. Details: `docs/API-NOTES.md` §9.
+- New: `GetUserRole` (info `userRole`) — the desk's first run used the API wallet
+  address as the account address and traded blind; the connector now checks the
+  role before the first account-scoped read.
+- Fixed: «Cannot modify canceled or filled order» → `ReasonMissingOrder`.
+- Still unverified: `"f"` on cancels, `"a"` on modify, WS post transport (the desk
+  trades over REST).
+
 ### 🔧 In progress
-- **Live verification of the ORDER path on testnet** — run by the owner (keys
-  never leave his machine): `./scripts/run.sh ./examples/simple-trade`, also with
-  `HYPERLIQUID_USE_WS_POST=1`. Until it passes, treat the docs-only shapes as
-  unproven on the exchange side: `"f"`, `"a"`, single `modify` (not used yet).
+- Nothing. Next live items are on the desk side (order events with the master
+  address; cloid in `userFills`).
 
 ### 📋 Planned
 - (done 2026-09-22) module published: `main` + tag `v1.0.0` on GitHub, the

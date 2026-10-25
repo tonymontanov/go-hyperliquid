@@ -107,6 +107,7 @@ func newMockExchange(t *testing.T) *mockExchange {
 			"clearinghouseState": fixtureClearinghouse,
 			"userRateLimit":      `{"cumVlm":"2854574.593578","nRequestsUsed":2890,"nRequestsCap":2864574,"nRequestsSurplus":0}`,
 			"orderStatus":        `{"status":"unknownOid"}`,
+			"userRole":           `{"role":"agent","data":{"user":"0x0f5f3832bbfc71630d4f4b78026000f32147a7f7"}}`,
 		},
 		infoCalls:    map[string]int{},
 		exchangeResp: `{"status":"ok","response":{"type":"default"}}`,
@@ -674,5 +675,21 @@ func TestStreamsAndWsPost(t *testing.T) {
 	_, err = perps.Trading().WS().CreateOrder(context.Background(), types.OrderRequest{Coin: "BTC", IsBuy: true, Price: fx("86000"), Size: fx("0.001"), TimeInForce: types.TimeInForceAlo}, types.OrderOptions{})
 	if err == nil || errors.Is(err, context.Canceled) {
 		t.Fatalf("after Close a WS order must fail fast with an SDK error, got %v", err)
+	}
+}
+
+// TestUserRole — info userRole decodes the agent → master relation.
+func TestUserRole(t *testing.T) {
+	var m = newMockExchange(t)
+	var _, perps = newSection(t, m, nil)
+	var role, err = perps.Account().GetUserRole(context.Background(), "0x5e9ee1089755c3435139848e47e6635505d5a13a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if role.Role != types.UserRoleAgent || role.Data.User != "0x0f5f3832bbfc71630d4f4b78026000f32147a7f7" {
+		t.Fatalf("role = %+v", role)
+	}
+	if _, err = perps.Account().GetUserRole(context.Background(), ""); err == nil {
+		t.Fatal("empty address must be rejected before the network")
 	}
 }

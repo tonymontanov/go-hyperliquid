@@ -265,6 +265,9 @@ var exchangeTextRules []textRule = []textRule{
 	{"too far from oracle", ErrorKindExchange, ReasonOracle},
 	{"exceed margin tier limit", ErrorKindExchange, ReasonPerpMaxPosition},
 	{"never placed, already canceled, or filled", ErrorKindExchange, ReasonMissingOrder},
+	// Modify of a gone order answers with a different text than cancel does
+	// (mainnet, 2026-10-25): same meaning, same reason.
+	{"cannot modify canceled or filled order", ErrorKindExchange, ReasonMissingOrder},
 	{"user or api wallet", ErrorKindAuth, ReasonSignerUnknown},
 	{"must deposit before performing actions", ErrorKindAuth, ReasonMustDeposit},
 	{"already expired", ErrorKindInvalidRequest, ReasonExpired},

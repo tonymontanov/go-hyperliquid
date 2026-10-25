@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-10-25
+
+### Added
+- `perpetuals.AccountClient.GetUserRole(ctx, address)` — info `userRole`
+  (weight 60): master / agent (with the master it signs for) / vault /
+  sub-account / missing. Lets a desk detect the API wallet address used as the
+  account address — the first live run of the desk connector traded blind that
+  way (actions went through, every account-scoped read saw an empty account).
+
+### Fixed
+- Error classification: the exchange rejects a modify of a gone order with
+  «Cannot modify canceled or filled order» (mainnet, 2026-10-25) — now
+  `ReasonMissingOrder` / `IsMissingOrder`, like the cancel text.
+
+### Verified live (mainnet, 2026-10-25, desk connector)
+- Signing and action acceptance; `resting` / `filled` / `error` statuses;
+  `batchModify` gives the replacement a NEW oid; cancel by oid and by cloid;
+  «Order was never placed, already canceled, or filled.» on cancel.
+- RTT: order ≈ 0.65–0.75 s, cancel ≈ 0.95–1.05 s (answer after block inclusion).
+- `clearinghouseState` subscription pushes every ~5 s; 20-level `l2Book`
+  every ~4–5 s; `bbo` ≈ 3 Hz on BTC.
+
 ## [1.0.1] — 2026-09-22
 
 ### Fixed

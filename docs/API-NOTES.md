@@ -153,3 +153,23 @@ Book: REST and WS `l2Book` are **full snapshots**, ≤ 20 levels per side (`fast
 5), optional `nSigFigs` 2..5 and `mantissa` 1|2|5 (only with nSigFigs 5). No
 deltas, no sequence numbers, no checksum. Diffs exist only in node output
 (non-validating node) — out of scope.
+
+## 9. Verified live on mainnet (2026-10-25, via the desk connector) [LIVE]
+
+- Modify of a gone order: `{"error":"Cannot modify canceled or filled order"}`
+  — a different text from the cancel case (#1 above lists only the cancel text);
+  classified as `ReasonMissingOrder` since 1.0.2.
+- `batchModify` assigns the replacement a new oid (the old oid disappears from
+  `frontendOpenOrders`); no `orderUpdates` frame for the OLD order was observed
+  when the account subscriptions pointed at the wrong address — re-check with the
+  master address.
+- `clearinghouseState` subscription (docs-only, #2) is accepted and pushes a
+  snapshot every ~5 s even without changes.
+- `l2Book` default (20 levels): pushes ≈ every 4–5 s (confirms #14); `bbo` ≈ 3
+  pushes/s on BTC; `activeAssetCtx` ≈ 1/s.
+- RTT from Europe: order ≈ 0.65–0.75 s, cancel ≈ 0.95–1.05 s.
+- `userRole` of an API wallet returns `{"role":"agent","data":{"user":"<master>"}}`;
+  a configured user that is the agent itself gets empty `frontendOpenOrders`,
+  `clearinghouseState` without positions and `userRateLimit` with
+  `nRequestsUsed: 0` while its actions land on the master — the trap behind
+  `GetUserRole`.

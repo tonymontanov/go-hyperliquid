@@ -323,6 +323,23 @@ func UserRateLimit(ctx context.Context, e *engine.Engine, p *Profile, user strin
 	return out, nil
 }
 
+// UserRole fetches what address is to the exchange: a master account, an API
+// wallet (agent) with the master it signs for, a vault or a sub-account. The
+// address may be any address, not only the configured user (weight 60).
+func UserRole(ctx context.Context, e *engine.Engine, p *Profile, address string) (types.UserRole, error) {
+	var out types.UserRole
+	var err error = p.requireUser("UserRole", address)
+	if err != nil {
+		return out, err
+	}
+	var body []byte = make([]byte, 0, 80)
+	body = append(body, `{"type":"userRole","user":`...)
+	body = appendJSONText(body, address)
+	body = append(body, '}')
+	err = e.Info(ctx, "userRole", body, &out, engine.InfoOptions{}, nil)
+	return out, err
+}
+
 // ClearinghouseState fetches the margin account state of the profile's dex.
 func ClearinghouseState(ctx context.Context, e *engine.Engine, p *Profile, user string, transport engine.Transport) (types.ClearinghouseState, error) {
 	var out types.ClearinghouseState

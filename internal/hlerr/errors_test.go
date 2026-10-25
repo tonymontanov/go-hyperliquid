@@ -37,6 +37,7 @@ func TestMapExchangeText(t *testing.T) {
 		{"Order price too far from oracle", ErrorKindExchange, ReasonOracle},
 		{"Order would cause position to exceed margin tier limit at current leverage", ErrorKindExchange, ReasonPerpMaxPosition},
 		{"Order was never placed, already canceled, or filled.", ErrorKindExchange, ReasonMissingOrder},
+		{"Cannot modify canceled or filled order", ErrorKindExchange, ReasonMissingOrder},
 		{"L1 error: User or API Wallet 0x0123456789012345678901234567890123456789 does not exist.", ErrorKindAuth, ReasonSignerUnknown},
 		{"Must deposit before performing actions. User: 0x0123456789012345678901234567890123456789", ErrorKindAuth, ReasonMustDeposit},
 		{"Something the SDK has never seen", ErrorKindExchange, ReasonNone},

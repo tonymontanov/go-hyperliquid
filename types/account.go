@@ -128,6 +128,37 @@ type UserFills struct {
 	Fills      []Fill `json:"fills"`
 }
 
+// UserRole — what an address is to the exchange (info "userRole"): "user"
+// (a master account), "agent" (an API wallet; Data.User is the master it
+// signs for), "vault", "subAccount" (Data.Master is the master) or "missing"
+// (unknown to the exchange).
+type UserRole struct {
+	Role string       `json:"role"`
+	Data UserRoleData `json:"data"`
+}
+
+// UserRoleData — the related address of an agent or a sub-account.
+type UserRoleData struct {
+	// User — the master account an API wallet (agent) signs for.
+	User string `json:"user"`
+	// Master — the master account of a sub-account.
+	Master string `json:"master"`
+}
+
+// Role values of UserRole.Role.
+const (
+	// UserRoleUser — a master account.
+	UserRoleUser string = "user"
+	// UserRoleAgent — an API wallet acting for Data.User.
+	UserRoleAgent string = "agent"
+	// UserRoleVault — a vault address.
+	UserRoleVault string = "vault"
+	// UserRoleSubAccount — a sub-account of Data.Master.
+	UserRoleSubAccount string = "subAccount"
+	// UserRoleMissing — the address is unknown to the exchange.
+	UserRoleMissing string = "missing"
+)
+
 // UserRateLimit — address-based rate-limit state (info "userRateLimit").
 type UserRateLimit struct {
 	CumVlm           decimal.Decimal `json:"cumVlm"`
